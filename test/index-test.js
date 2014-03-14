@@ -1,7 +1,7 @@
 var vows = require('vows');
 var assert = require('assert');
 var util = require('util');
-var local = require('passport-local');
+var local = require('passport-ip');
 
 
 vows.describe('passport-local').addBatch({

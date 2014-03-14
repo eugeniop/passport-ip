@@ -50,7 +50,45 @@ vows.describe('ipStrategy').addBatch({
         assert.isNull(err);
       },
       'should authenticate' : function(err, user) {
-        assert.equal(user.id, '1.1.1.1');
+        assert.equal(user.user_id, '1.1.1.1');
+      },
+    },
+  },
+
+    'strategy handling a request in multiple ranges': {
+    topic: function() {
+      var strategy = new Strategy({range:'1.1.1.1/5,10.0.0.0/10'.split(",")}, function(){});
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+
+        strategy.success = function(user) {
+          self.callback(null, user);
+        }
+
+        strategy.fail = function() {
+          self.callback(new Error('should-not-be-called'));
+        }
+        
+        strategy._verify = function(client, done) {
+          done(null, { user_id: client.id });
+        }
+        
+        req.headers = { 'X-Forwarded-For': '1.1.1.1'};
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not generate an error' : function(err, user) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, user) {
+        assert.equal(user.user_id, '1.1.1.1');
       },
     },
   },
@@ -76,7 +114,7 @@ vows.describe('ipStrategy').addBatch({
           self.callback(new Error('should-not-be-called'));
         }
         
-        req.headers = { 'X-Forwarded-For': '1.1.1.6'};
+        req.headers = { 'X-Forwarded-For': '192.168.1.6'};
         process.nextTick(function () {
           strategy.authenticate(req);
         });
@@ -86,15 +124,14 @@ vows.describe('ipStrategy').addBatch({
         assert.isNull(err);
       },
       'should authenticate' : function(err, user) {
-        assert.equal(user.username, 'johndoe');
-        assert.equal(user.password, 'secret');
+         
       },
     },
   },
   
   'strategy handling a request that encounters an error during verification': {
     topic: function() {
-      var strategy = new LocalStrategy({range: '1.1.1.1/2'}, function(){});
+      var strategy = new Strategy({range: '1.1.1.1/2'}, function(){});
       return strategy;
     },
     
@@ -116,7 +153,7 @@ vows.describe('ipStrategy').addBatch({
           done(new Error('something-went-wrong'));
         }
         
-        req.body = {headers:{ 'X-Forwarded-For': '1.1.1.1'}};
+        req.headers = { 'X-Forwarded-For': '1.1.1.1'};
         process.nextTick(function () {
           strategy.authenticate(req);
         });
@@ -131,9 +168,10 @@ vows.describe('ipStrategy').addBatch({
     },
   },
   
+
   'strategy handling a request with no IP address': {
     topic: function() {
-      var strategy = new LocalStrategy({range:'1.1.1.1/2'}, function(){});
+      var strategy = new Strategy({range:'1.1.1.1/2'}, function(){});
       return strategy;
     },
     
@@ -145,7 +183,7 @@ vows.describe('ipStrategy').addBatch({
           self.callback(null, info);
         }
         
-        req.body = { headers: {} };
+        req.headers =  {} ;
         process.nextTick(function () {
           strategy.authenticate(req);
         });

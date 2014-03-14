@@ -42,6 +42,7 @@
     "authn",
     "authentication"
   ],
+  
   "readme": "README.md",
   "homepage": "https://github.com/eugeniop/passport-ip"
 }
