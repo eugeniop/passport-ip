@@ -3,7 +3,6 @@ var assert = require('assert');
 var util = require('util');
 var local = require('passport-ip');
 
-
 vows.describe('passport-local').addBatch({
   
   'module': {

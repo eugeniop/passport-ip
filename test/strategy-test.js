@@ -20,13 +20,25 @@ vows.describe('ipStrategy').addBatch({
   'strategy handling a request in range': {
     topic: function() {
       var strategy = new Strategy({range:'1.1.1.1/5'}, function(){});
+
+      //Mock
+      strategy.redirect = function(url) {
+          assert.equal(url, '/login/callback?code=dummy');
+          strategy.authenticate( {
+                                  query: { code: 'dummy' },
+                                  headers: {'x-forwarded-for': '1.1.1.1'}
+                                 });
+      };
+
       return strategy;
     },
     
     'after augmenting with actions': {
       topic: function(strategy) {
         var self = this;
-        var req = {};
+        var req = {
+          query: {},
+        };
 
         strategy.success = function(user) {
           self.callback(null, user);
@@ -40,7 +52,6 @@ vows.describe('ipStrategy').addBatch({
           done(null, { user_id: client.id });
         }
         
-        req.headers = { 'X-Forwarded-For': '1.1.1.1'};
         process.nextTick(function () {
           strategy.authenticate(req);
         });
@@ -58,13 +69,21 @@ vows.describe('ipStrategy').addBatch({
     'strategy handling a request in multiple ranges': {
     topic: function() {
       var strategy = new Strategy({range:'1.1.1.1/5,10.0.0.0/10'.split(",")}, function(){});
-      return strategy;
+
+      //Mock
+      strategy.redirect = function(url) {
+        assert.equal(url, '/login/callback?code=dummy');
+        strategy.authenticate( {
+                                  query: { code: 'dummy' },
+                                  headers: {'x-forwarded-for': '1.1.1.1'}
+                                 });
+        return strategy;
+      };
     },
     
     'after augmenting with actions': {
       topic: function(strategy) {
         var self = this;
-        var req = {};
 
         strategy.success = function(user) {
           self.callback(null, user);
@@ -78,7 +97,6 @@ vows.describe('ipStrategy').addBatch({
           done(null, { user_id: client.id });
         }
         
-        req.headers = { 'X-Forwarded-For': '1.1.1.1'};
         process.nextTick(function () {
           strategy.authenticate(req);
         });
@@ -96,9 +114,19 @@ vows.describe('ipStrategy').addBatch({
   'strategy handling a request in multiple ranges with an optional username': {
     topic: function() {
       var strategy = new Strategy({range:'1.1.1.1/5,10.0.0.0/10'.split(","), username: '123'}, function(){});
-      return strategy;
+
+      //Mock
+      strategy.redirect = function(url) {
+          assert.equal(url, '/login/callback?code=dummy');
+          strategy.authenticate( {
+                                  query: { code: 'dummy' },
+                                  headers: {'x-forwarded-for': '1.1.1.1'}
+                                 });
+
+          return strategy;
+      };
     },
-    
+
     'after augmenting with actions': {
       topic: function(strategy) {
         var self = this;
@@ -116,7 +144,7 @@ vows.describe('ipStrategy').addBatch({
           done(null, { user_id: client.id, username: client.username });
         }
         
-        req.headers = { 'X-Forwarded-For': '1.1.1.1'};
+        req.headers = { 'x-forwarded-for': '1.1.1.1'};
         process.nextTick(function () {
           strategy.authenticate(req);
         });
@@ -135,6 +163,15 @@ vows.describe('ipStrategy').addBatch({
   'strategy handling a request off range fails': {
     topic: function() {
       var strategy = new Strategy({range:'1.1.1.1/5'}, function(){});
+
+      strategy.redirect = function(url) {
+          assert.equal(url, '/login/callback?code=dummy');
+          strategy.authenticate( {
+                                  query: { code: 'dummy' },
+                                  headers: {'x-forwarded-for': '192.168.1.6'}
+                                 });
+      };
+
       return strategy;
     },
     
@@ -153,7 +190,6 @@ vows.describe('ipStrategy').addBatch({
           self.callback(new Error('should-not-be-called'));
         }
         
-        req.headers = { 'X-Forwarded-For': '192.168.1.6'};
         process.nextTick(function () {
           strategy.authenticate(req);
         });
@@ -171,7 +207,15 @@ vows.describe('ipStrategy').addBatch({
   'strategy handling a request that encounters an error during verification': {
     topic: function() {
       var strategy = new Strategy({range: '1.1.1.1/2'}, function(){});
-      return strategy;
+      
+      strategy.redirect = function(url) {
+          assert.equal(url, '/login/callback?code=dummy');
+          strategy.authenticate( {
+                                  query: { code: 'dummy' },
+                                  headers: {'x-forwarded-for': '1.1.1.1'}
+                                 });
+        return strategy;
+      };
     },
     
     'after augmenting with actions': {
@@ -192,7 +236,6 @@ vows.describe('ipStrategy').addBatch({
           done(new Error('something-went-wrong'));
         }
         
-        req.headers = { 'X-Forwarded-For': '1.1.1.1'};
         process.nextTick(function () {
           strategy.authenticate(req);
         });
@@ -206,12 +249,18 @@ vows.describe('ipStrategy').addBatch({
       },
     },
   },
-  
 
   'strategy handling a request with no IP address': {
     topic: function() {
       var strategy = new Strategy({range:'1.1.1.1/2'}, function(){});
-      return strategy;
+
+      strategy.redirect = function(url) {
+        assert.equal(url, '/login/callback?code=dummy');
+        strategy.authenticate( {
+                                  query: { code: 'dummy' },
+                                 });
+        return strategy;
+      };
     },
     
     'after augmenting with actions': {
@@ -250,5 +299,4 @@ vows.describe('ipStrategy').addBatch({
       assert.throws(function() { new Strategy({something_else:'whatever'}, function(){}) });
     },
   },
-
 }).export(module);
