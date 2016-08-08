@@ -16,7 +16,7 @@
   },
   "main": "./lib/passport-ip",
   "dependencies": {
-    "passport": "~0.1.1",
+    "passport": "0.3.x",
     "range_check": "0.0.1"
   },
   "devDependencies": {
